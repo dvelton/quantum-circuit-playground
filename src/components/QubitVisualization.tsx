@@ -34,7 +34,7 @@ export function QubitVisualization({
       </div>
 
       {/* Bloch Sphere */}
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-4" data-tutorial="measurement">
         <BlochSphere qubit={qubit} size={180} />
       </div>
 

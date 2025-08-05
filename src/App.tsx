@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useKV } from '@github/spark/hooks';
@@ -14,11 +14,12 @@ import {
 import { GatePalette } from '@/components/GatePalette';
 import { CircuitWire } from '@/components/CircuitWire';
 import { QubitVisualization } from '@/components/QubitVisualization';
+import { TutorialOverlay } from '@/components/TutorialOverlay';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { RotateCcw, Play, Atom } from '@phosphor-icons/react';
+import { RotateCcw, Play, Atom, GraduationCap } from '@phosphor-icons/react';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
@@ -37,6 +38,15 @@ function App() {
 
   const [circuitGates, setCircuitGates] = useKV<CircuitGate[]>('quantum-circuit', []);
   const [measurements, setMeasurements] = useKV<{ qubit: number; result: 0 | 1; timestamp: number }[]>('quantum-measurements', []);
+  const [showTutorial, setShowTutorial] = useKV<boolean>('tutorial-shown', false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+
+  // Show tutorial on first visit
+  useEffect(() => {
+    if (!showTutorial) {
+      setIsTutorialOpen(true);
+    }
+  }, [showTutorial]);
 
   const handleGateDrop = useCallback((gate: QuantumGate, qubitIndex: number, position: number) => {
     const newGate: CircuitGate = {
@@ -134,6 +144,15 @@ function App() {
     }, 100);
   }, [resetCircuit, setCircuitGates, setQubits]);
 
+  const handleTutorialClose = () => {
+    setIsTutorialOpen(false);
+    setShowTutorial(true);
+  };
+
+  const openTutorial = () => {
+    setIsTutorialOpen(true);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-background text-foreground">
@@ -151,7 +170,7 @@ function App() {
               </div>
               
               <div className="flex items-center space-x-4">
-                <Select onValueChange={loadPreset}>
+                <Select onValueChange={loadPreset} data-tutorial="presets">
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Load Preset Circuit" />
                   </SelectTrigger>
@@ -163,6 +182,11 @@ function App() {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                <Button variant="outline" onClick={openTutorial}>
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  Tutorial
+                </Button>
                 
                 <Button variant="outline" onClick={resetCircuit}>
                   <RotateCcw className="w-4 h-4 mr-2" />
@@ -177,7 +201,7 @@ function App() {
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
             
             {/* Gate Palette */}
-            <div className="xl:col-span-1">
+            <div className="xl:col-span-1" data-tutorial="gate-palette">
               <GatePalette />
             </div>
 
@@ -225,7 +249,7 @@ function App() {
             </div>
 
             {/* Qubit Visualizations */}
-            <div className="xl:col-span-1 space-y-6">
+            <div className="xl:col-span-1 space-y-6" data-tutorial="qubit-viz">
               {qubits.map((qubit, index) => (
                 <QubitVisualization
                   key={qubit.id}
@@ -237,6 +261,11 @@ function App() {
             </div>
           </div>
         </div>
+
+        <TutorialOverlay 
+          isOpen={isTutorialOpen} 
+          onClose={handleTutorialClose} 
+        />
       </div>
     </DndProvider>
   );
